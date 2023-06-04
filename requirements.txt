@@ -1,0 +1,4 @@
+PyQt6==6.2.1
+matplotlib==3.4.3
+numpy==1.21.2
+tensorflow==2.6.0
