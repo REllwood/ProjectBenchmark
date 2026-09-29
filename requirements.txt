@@ -1,4 +1,9 @@
-PyQt6==6.2.1
-matplotlib==3.4.3
-numpy==1.21.2
-tensorflow==2.6.0
+# Apple System Benchmark · Python 3.10 to 3.13
+# The full suite needs macOS 13 or later on Apple Silicon. On other systems the app
+# still runs: the GPU test falls back to the CPU and the Neural Engine test is skipped.
+PyQt6>=6.5
+matplotlib>=3.8
+numpy>=1.26
+psutil>=5.9
+mlx>=0.20; sys_platform == "darwin" and platform_machine == "arm64"
+coremltools>=8.0; sys_platform == "darwin"
