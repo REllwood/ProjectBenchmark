@@ -180,6 +180,7 @@ QLabel#TileValue {{ font-size: 22px; font-weight: 700; }}
 QLabel#Positive {{ color: {t.positive}; font-weight: 600; }}
 QLabel#Negative {{ color: {t.negative}; font-weight: 600; }}
 QLabel#Pill {{ background: {t.warning_bg}; color: {t.warning_text}; border-radius: 9px; padding: 2px 8px; font-size: 11px; font-weight: 600; }}
+QLabel#PillAccent {{ background: {t.selected}; color: {t.selected_text}; border-radius: 9px; padding: 2px 8px; font-size: 11px; font-weight: 600; }}
 QLabel#ErrorText {{ color: {t.error_text}; }}
 #Banner {{ background: {t.warning_bg}; border-radius: 12px; }}
 #Banner QLabel {{ color: {t.warning_text}; }}

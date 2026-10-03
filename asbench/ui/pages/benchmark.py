@@ -68,6 +68,7 @@ class BenchmarkPage(Page):
 
         for signal in (ctl.history_changed, ctl.machine_ready, ctl.job_started, ctl.job_finished, ctl.job_failed):
             signal.connect(lambda *_: self.refresh())
+        ctl.result_ready.connect(lambda r: self.refresh() if r.key == spec.key else None)
         self.refresh()
 
     def _choose_folder(self):

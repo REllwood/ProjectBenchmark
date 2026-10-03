@@ -10,10 +10,11 @@ from __future__ import annotations
 import logging
 import threading
 import traceback
+from datetime import datetime
 
 from PyQt6.QtCore import QObject, QSettings, QThread, pyqtSignal
 
-from asbench import APP_NAME, benchmarks
+from asbench import APP_NAME, __version__, benchmarks
 from asbench.core.context import RunContext
 from asbench.core.history import History
 from asbench.core.model import OK, BenchmarkResult, RunRecord
@@ -78,6 +79,8 @@ class Controller(QObject):
         self.availability: dict[str, tuple[str, str]] = {}
         self._status = ""
         self._fraction = 0.0
+        self.current: str | None = None          # the benchmark running right now
+        self._live: RunRecord | None = None      # results of the job in progress, before it's saved
         threading.Thread(target=self._probe_machine, daemon=True).start()
 
     # --- machine info, gathered off the UI thread because it takes a second or two ---------
@@ -128,6 +131,16 @@ class Controller(QObject):
         worker.done.connect(self._on_done)
         worker.failed.connect(self._on_failed)
         self.worker = worker
+        self.current = None
+        self._live = RunRecord(
+            id="live",
+            timestamp=datetime.now().astimezone().isoformat(timespec="seconds"),
+            kind="live",
+            mode="quick" if self.quick else "standard",
+            app_version=__version__,
+            system={},
+            results=[],
+        )
         worker.start()
         self.job_started.emit(keys)
         return True
@@ -147,8 +160,12 @@ class Controller(QObject):
 
     def _on_event(self, name: str, payload):
         if name == "benchmark_started":
+            self.current = payload
             self.benchmark_started.emit(payload)
         elif name == "benchmark_finished":
+            self.current = None
+            if self._live is not None:
+                self._live.results.append(payload)
             self.result_ready.emit(payload)
         elif name == "power_sample":
             self.power_sample.emit(payload)
@@ -157,6 +174,7 @@ class Controller(QObject):
 
     def _on_done(self, record: RunRecord):
         self.worker = None
+        self.current, self._live = None, None
         if record.results:
             self.history.add(record)
             self.records.append(record)
@@ -165,12 +183,19 @@ class Controller(QObject):
 
     def _on_failed(self, message: str):
         self.worker = None
+        self.current, self._live = None, None
         self.job_failed.emit(message)
 
     # --- history ---------------------------------------------------------------------------
 
     def latest(self, key: str) -> tuple[RunRecord, BenchmarkResult] | None:
-        """The most recent result for a benchmark, whatever its status."""
+        """The most recent result for a benchmark, whatever its status.
+
+        Includes results from the run in progress, so pages update as each benchmark
+        finishes rather than only when the whole run ends.
+        """
+        if self._live is not None and (result := self._live.result(key)) is not None:
+            return self._live, result
         for record in reversed(self.records):
             result = record.result(key)
             if result is not None:

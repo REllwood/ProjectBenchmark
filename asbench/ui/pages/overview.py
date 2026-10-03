@@ -11,7 +11,7 @@ from asbench.core.history import change
 from asbench.core.model import OK, UNAVAILABLE
 from asbench.ui import charts
 from asbench.ui.summaries import STATUS_PILL, headline, power_line, why_not
-from asbench.ui.widgets import Badge, Card, DeltaLabel, Page, PageHeader, Segmented, button, label
+from asbench.ui.widgets import Badge, Card, DeltaLabel, Page, PageHeader, Segmented, button, label, repolish
 
 
 class CategoryCard(Card):
@@ -106,7 +106,8 @@ class OverviewPage(Page):
         self.content.addLayout(grid)
         self.content.addStretch()
 
-        for signal in (ctl.history_changed, ctl.machine_ready, ctl.job_started, ctl.job_finished, ctl.job_failed):
+        for signal in (ctl.history_changed, ctl.machine_ready, ctl.job_started, ctl.job_finished, ctl.job_failed,
+                       ctl.benchmark_started, ctl.result_ready):
             signal.connect(lambda *_: self.refresh())
         self.refresh()
 
@@ -159,8 +160,11 @@ class OverviewPage(Page):
                 card.detail.setText(status[1] if status[0] == UNAVAILABLE else spec.summary)
                 card.power.setText("")
                 pill = "Unavailable" if status[0] == UNAVAILABLE else ""
-            card.pill.setText(pill)
-            card.pill.setVisible(bool(pill))
+            running = busy and ctl.current == spec.key
+            card.pill.setObjectName("PillAccent" if running else "Pill")
+            repolish(card.pill)
+            card.pill.setText("Running…" if running else pill)
+            card.pill.setVisible(running or bool(pill))
             items.append((spec.key, spec.title, score, prev))
         self.chart.plot(charts.category_bars(items) if any(s for _, _, s, _ in items) else None,
                         empty_text="Scores appear here after your first run")

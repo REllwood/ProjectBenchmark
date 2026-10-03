@@ -253,8 +253,7 @@ class RunBar(QFrame):
             self.title.setText(f"Finished  ·  overall score {fmt.score(record.composite)}")
             self.status.setText(f"Took {fmt.duration(time.monotonic() - self._start)} · saved to History")
         else:
-            parts = [f"{r.title} {fmt.score(r.score)}" if r.status == OK and r.score else f"{r.title}: {r.status}" for r in record.results]
-            self.title.setText("Finished  ·  " + ", ".join(parts))
+            self.title.setText("Finished  ·  " + ", ".join(_summary(r) for r in record.results))
             self.status.setText("Saved to History")
         self._hide_timer.start(8000)
 
@@ -265,6 +264,16 @@ class RunBar(QFrame):
         self.title.setText("Something went wrong")
         self.status.setText(message.strip().splitlines()[-1] if message.strip() else "Unknown error")
         self._hide_timer.start(15000)
+
+
+def _summary(r) -> str:
+    """'CPU 1,361', 'Sustained · CPU kept 85.9%, GPU kept 92.9%' or 'GPU: error'."""
+    if r.key == "sustained" and r.status == OK:
+        kept = [f"{m.group} kept {fmt.value(m.value, '%')}" for m in r.metrics if m.id.endswith("_retained")]
+        return "Sustained · " + ", ".join(kept) if kept else r.title
+    if r.status == OK and r.score:
+        return f"{r.title} {fmt.score(r.score)}"
+    return f"{r.title}: {r.status}"
 
 
 class MainWindow(QMainWindow):

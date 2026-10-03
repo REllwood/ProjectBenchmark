@@ -109,3 +109,47 @@ def test_switching_theme_after_widgets_are_deleted_does_not_crash(app, monkeypat
     theme.manager().set_mode("dark")
     theme.manager().set_mode("light")
     assert errors == []
+
+
+def test_overview_updates_as_each_benchmark_finishes(app, window, monkeypatch):
+    import threading
+
+    from asbench.core.model import BenchmarkResult, Metric
+
+    release = threading.Event()
+    monkeypatch.setattr(benchmarks.get("memory").load(), "run",
+                        lambda ctx: BenchmarkResult(key="memory", title="Memory", metrics=[Metric("memory.copy", "Copy", 55.0, "GB/s")]))
+
+    def slow_storage(ctx):
+        release.wait(30)
+        return BenchmarkResult(key="storage", title="Storage", metrics=[Metric("storage.seq_read", "Read", 2600.0, "MB/s")])
+
+    monkeypatch.setattr(benchmarks.get("storage").load(), "run", slow_storage)
+    done = []
+    window.ctl.job_finished.connect(done.append)
+    window.ctl.start(["memory", "storage"])
+    cards = window.pages["overview"].cards
+    try:
+        assert pump(app, lambda: cards["memory"].score.text() == "1,000", timeout=30)  # shown before the run ends
+        assert pump(app, lambda: cards["storage"].pill.text() == "Running…", timeout=30)
+        assert not done
+    finally:
+        release.set()
+    assert pump(app, lambda: done)
+    app.processEvents()
+    assert cards["storage"].score.text() == "1,000" and cards["storage"].pill.isHidden()
+
+
+def test_finish_message_summarises_each_kind_of_result():
+    from asbench.core.model import BenchmarkResult, Metric
+    from asbench.ui.window import _summary
+
+    scored = BenchmarkResult(key="cpu", title="CPU", score=1361.2)
+    sustained = BenchmarkResult(key="sustained", title="Sustained · CPU + GPU", metrics=[
+        Metric("sustained.cpu_retained", "CPU performance retained", 85.8, "%", group="CPU", scored=False),
+        Metric("sustained.gpu_retained", "GPU performance retained", 93.1, "%", group="GPU", scored=False),
+    ])
+    failed = BenchmarkResult(key="gpu", title="GPU", status="error")
+    assert _summary(scored) == "CPU 1,361"
+    assert _summary(sustained) == "Sustained · CPU kept 85.8%, GPU kept 93.1%"
+    assert _summary(failed) == "GPU: error"

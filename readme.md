@@ -9,6 +9,25 @@ Neural Engine of Apple Silicon Macs. Every test is timed, so faster hardware sco
 It also reports power draw and efficiency, tracks results over time, tests sustained
 performance and thermal throttling, and exports shareable reports.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/overview-dark.png">
+  <img src="screenshots/overview-light.png" alt="The Overview page: an overall score of 1,580, a bar chart comparing each category with the 1,000-point reference, and a card for each benchmark showing its score, change since the last run and power draw.">
+</picture>
+
+<sub>Screenshots and animations use illustrative sample data for a MacBook Pro with an M2 Pro chip, not real measurements. Animations are sped up.</sub>
+
+## See it in action
+
+**Run every benchmark.** Each card updates as soon as its benchmark finishes. The bar along the
+bottom shows progress, live power draw and a Cancel button.
+
+![Pressing Run all: a Running badge moves from card to card, each score updates as its benchmark finishes, and the run ends with an overall score of 1,580.](screenshots/run-all.gif)
+
+**Find your way around.** Switch between light and dark mode, open a benchmark for its full
+breakdown and score history, and compare any two runs side by side.
+
+![Switching to dark mode, opening the CPU and Neural Engine pages, then selecting two runs on the History page and comparing them.](screenshots/tour.gif)
+
 ## What's new in 2.0
 
 Version 2.0 is a rewrite of the 0.1 proof of concept. The main changes:
@@ -83,6 +102,23 @@ The exit code is 0 on success, 1 if a benchmark failed, and 130 if you pressed C
 | **Neural Engine** | Two networks (a convolution stack and transformer-style layers) run through Core ML on the Neural Engine, plus the same work on the GPU and CPU for comparison. The page also shows how many layers Core ML placed on the Neural Engine. | TOPS |
 | **Sustained** | Keeps the CPU and/or GPU fully loaded for 1 to 20 minutes and charts performance, power and thermal pressure over time. It reports the peak, the sustained level, the percentage kept, and when throttling began. | % of peak |
 
+Each benchmark has its own page with every test result, its points, the change since your
+last run, power draw and a score history.
+
+<p>
+  <img src="screenshots/cpu-dark.png" width="49%" alt="The CPU page in dark mode: single-core and multi-core results for each workload, with points and the change since the last run.">
+  <img src="screenshots/neural-light.png" width="49%" alt="The Neural Engine page: results on the Neural Engine, the same network on the GPU and CPU for comparison, and a note that Core ML placed 16 of 16 layers on the Neural Engine.">
+</p>
+
+### Sustained performance and thermal throttling
+
+Short benchmarks finish before a Mac heats up. The **Sustained** test keeps the CPU and/or GPU
+fully loaded for several minutes and charts performance as it happens. A dip in the line, with
+the shaded area for raised thermal pressure, shows when the Mac started slowing itself down to
+stay cool.
+
+![Starting a three-minute CPU and GPU sustained test: the chart fills in live, performance dips after about a minute and three-quarters as thermal pressure rises, and the run ends showing 85.8% of CPU and 93.1% of GPU performance kept.](screenshots/sustained.gif)
+
 ## How scores work
 
 - Each result is compared with a reference value. Matching it scores **1,000** points, and twice as fast scores 2,000.
@@ -121,16 +157,27 @@ do). To remove it, run `sudo rm /etc/sudoers.d/powermetrics`.
 ## History, comparisons and reports
 
 Every run is saved automatically. On the **History** page you can:
+
 - chart scores over time,
 - select two runs and press **Compare** to see every test side by side,
 - export runs as CSV or JSON,
 - save an HTML report of any run.
 
+<p>
+  <img src="screenshots/history-light.png" width="49%" alt="The History page: a chart of every category's score over five weeks, and a table of saved runs with two selected.">
+  <img src="screenshots/compare-light.png" width="49%" alt="Comparing two runs: each test's result in both runs, with the change shown in green when better and red when worse.">
+</p>
+
 **Export report** on the Overview page saves a report of your latest results. Reports are single
 self-contained files with no external links, so you can email them or open them offline. They
 follow the reader's light or dark setting.
 
+<p align="center">
+  <img src="screenshots/report-light.png" width="70%" alt="An exported HTML report: the Mac's details, the overall score, a card per benchmark with power and efficiency, and a table of every test.">
+</p>
+
 Data is stored in `~/Library/Application Support/Apple System Benchmark/`:
+
 - `history.jsonl` holds the saved runs,
 - `references.json` holds your calibration, if you've made one,
 - `models/` holds cached Core ML models.
@@ -164,12 +211,6 @@ systems they cover every fallback path.
 - Results vary by a few per cent between runs, especially in Quick mode. Background activity, Low Power Mode and running on battery all lower scores.
 - Core ML decides which layers run on the Neural Engine. The Neural Engine page shows where they actually ran.
 - The storage test measures the drive holding the test folder. By default that's the internal SSD; use **Choose drive…** (or `--storage-path`) to test another.
-
-## Screenshots
-
-![Apple System Benchmark](screenshots/s.png)
-
-*This screenshot shows version 0.1 and will be updated.*
 
 ## Authors
 
